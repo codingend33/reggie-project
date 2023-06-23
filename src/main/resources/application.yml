@@ -1,0 +1,29 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    #应用名称(可选)，默认就是项目名称
+    name: reggie-project
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/reggie?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    type: com.alibaba.druid.pool.DruidDataSource
+
+
+mybatis-plus:
+  configuration:
+    #在映射实体或者属性时，将数据库中表名和字段名中的下划线去掉，按照驼峰命名法映射
+    map-underscore-to-camel-case: true
+    #开启日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+    #雪花算法
+      id-type: ASSIGN_ID
+
+#自定义一个参数，用于转存文件
+reggie:
+  path: D:\Study and job\study\coding\java\self_codes\reggie-project\reggie\img\
