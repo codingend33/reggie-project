@@ -1,5 +1,6 @@
 package com.codingend33.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.codingend33.common.R;
 import com.codingend33.dto.DishDto;
@@ -15,6 +16,9 @@ import com.codingend33.service.SetmealService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,8 +45,9 @@ public class SetmealController {
     private DishService dishService;
 
 
-
     @PostMapping
+    //设置allEntries为true，清空缓存名称为setmealCache的所有缓存
+    @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> save(@RequestBody SetmealDto setmealDto) {
         log.info("套餐信息：{}", setmealDto);
         setmealService.saveWithDish(setmealDto);
@@ -118,18 +123,22 @@ public class SetmealController {
         return R.success("删除成功");
     }
 
+
     //起售和停售
     //通过数组保存ids，批量起售停售都能生效
     @PostMapping("/status/{status}")
-    public R<String> sale(@PathVariable int status,String[] ids){
-        for (String id:ids){
-            Setmeal setmeal = setmealService.getById(id);
-            setmeal.setStatus(status);
-            setmealService.updateById(setmeal);
-        }
-        return R.success("修改成功");
-
+    //设置allEntries为true，清空缓存名称为setmealCache的所有缓存
+    @CacheEvict(value = "setmealCache", allEntries = true)
+    public R<String> status(@PathVariable String status, @RequestParam List<Long> ids) {
+        LambdaUpdateWrapper<Setmeal> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.in(Setmeal::getId, ids);
+        updateWrapper.set(Setmeal::getStatus, status);
+        setmealService.update(updateWrapper);
+        return R.success("批量操作成功");
     }
+
+
+
 
     //修改套餐
 
@@ -144,6 +153,8 @@ public class SetmealController {
 
     //操作修改的套餐信息
     @PutMapping()
+    //设置allEntries为true，清空缓存名称为setmealCache的所有缓存
+    @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> update(@RequestBody SetmealDto setmealDto){
         setmealService.updateWithDish(setmealDto);
         return R.success("修改成功");
@@ -152,15 +163,21 @@ public class SetmealController {
 
     // 左侧套餐展示
     @GetMapping("/list")
+    //根据categoryId和status生成动态key,将返回值存入缓存
+    @Cacheable(value = "setmealCache", key = "#setmeal.categoryId + '_' + #setmeal.status")
     public R<List<Setmeal>> list(Setmeal setmeal){
+        //条件构造器
         LambdaQueryWrapper<Setmeal> queryWrapper=new LambdaQueryWrapper<>();
+        //添加条件
         queryWrapper.eq(setmeal.getCategoryId()!=null,Setmeal::getCategoryId,setmeal.getCategoryId());
         queryWrapper.eq(setmeal.getStatus()!=null,Setmeal::getStatus,setmeal.getStatus());
+        //排序
         queryWrapper.orderByDesc(Setmeal::getUpdateTime);
 
         List<Setmeal> list = setmealService.list(queryWrapper);
         return R.success(list);
     }
+
 
     //点击图片查看套餐详情
     @GetMapping("/dish/{id}")
