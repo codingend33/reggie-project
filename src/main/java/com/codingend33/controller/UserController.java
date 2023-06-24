@@ -5,6 +5,9 @@ import com.codingend33.common.R;
 import com.codingend33.entity.User;
 import com.codingend33.service.UserService;
 import com.codingend33.utils.MailUtils;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @Slf4j
 @RequestMapping("/user")
+@Api(tags = "用户相关接口")
 public class UserController {
     @Autowired
     private UserService userService;
@@ -34,6 +38,7 @@ public class UserController {
     //是json格式，可以封装到User对象中，因为它有一个Phone属性
     //验证码需要存在方session中，方便后面比对
     @PostMapping("/sendMsg")
+    @ApiOperation("发送验证邮件接口")
     public R<String> sendMsg(@RequestBody User user, HttpSession session) throws MessagingException {
 
         String phone = user.getPhone();
@@ -58,6 +63,10 @@ public class UserController {
     //输入验证码后就需要登录了，所以添加login方法处理登录请求
     //因为发送请求的数据有键值对类型，所以使用map对象接收。
     @PostMapping("/login")
+    @ApiOperation("用户登录接口")
+    //有两个参数，但这里我只说明map这个参数
+    //如果说明两个参数需要在外面套一层@ApiImplicitParam({@ApiImplicitParam(),@ApiImplicitParam()})
+    @ApiImplicitParam(name = "map",value = "map集合接收数据",required = true)
     public R<User> login(@RequestBody Map map, HttpSession session) {
         log.info(map.toString());
 
@@ -101,6 +110,7 @@ public class UserController {
     }
 
     @PostMapping("/loginout")
+    @ApiOperation("用户登出接口")
     public R<String> logout(HttpServletRequest request) {
         request.getSession().removeAttribute("user");
         return R.success("退出成功");
