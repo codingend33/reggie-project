@@ -53,7 +53,7 @@ spring:
 
 mybatis-plus:
   configuration:
-    #在映射实体或者属性时，将数据库中表名和字段名中的下划线去掉，按照驼峰命名法映射
+    #如果数据库表中字段名 与 实体类中的属性名符合驼峰命名规则，mybatis会自动通过驼峰命名规则映射。
     map-underscore-to-camel-case: true
     #开启日志
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
@@ -62,6 +62,6 @@ mybatis-plus:
     #雪花算法
       id-type: ASSIGN_ID
 
-#自定义一个参数，用于转存文件
+#自定义一个参数，用于上传和下载时存储转存文件
 reggie:
   path: D:\Study and job\study\coding\java\self_codes\reggie-project\reggie\img\

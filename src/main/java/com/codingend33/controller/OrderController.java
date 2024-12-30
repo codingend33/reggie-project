@@ -34,75 +34,85 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
-
     @Autowired
     private OrderDetailService orderDetailService;
-
-
     @Autowired
     private ShoppingCartService shoppingCartService;
 
     /**
      * 用户下单
-     * @param orders
-     * @return
+     * 提交给服务端的数据格式为JSON：这些参数order实体类中都有，所以封装为一个oder对象
+     *  addressBookId: "1579828298672885762",
+     *  payMethod: 1,
+     *  remark: ""
+     *  请求路径/order/submit，请求方式POST，
+     *
+     *  前端传递过来的Json数据中没有购物车的数据和当前用户的ID，
+     *  因为我们可以通过BaseContext.getCurrentId()获取当前用户的ID，然后再通过ID就能获取用户购物车的信息。
+     *
+
      */
     @PostMapping("/submit")
     public R<String> submit(@RequestBody Orders orders){
+
         log.info("订单数据：{}",orders);
+        //涉及操作两张表，所以自定义一个方法
         orderService.submit(orders);
+
         return R.success("下单成功");
     }
 
+    /**
+     * 订单明细
+     */
 
-//用户订单明细
-@Transactional
-@GetMapping("/userPage")
-public R<Page> userPage(int page,int pageSize){
-    //构造分页构造器
-    Page<Orders> pageInfo = new Page<>(page, pageSize);
+    @Transactional
+    @GetMapping("/userPage")
+    public R<Page> userPage(int page,int pageSize){
+        //构造分页构造器
+        Page<Orders> pageInfo = new Page<>(page, pageSize);
 
-    Page<OrderDto> orderDtoPage = new Page<>();
+        Page<OrderDto> orderDtoPage = new Page<>();
 
-    //构造条件构造器
-    LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
+        //构造条件构造器
+        LambdaQueryWrapper<Orders> queryWrapper = new LambdaQueryWrapper<>();
 
-    //添加排序条件
-    queryWrapper.orderByDesc(Orders::getOrderTime);
+        //添加排序条件
+        queryWrapper.orderByDesc(Orders::getOrderTime);
 
-    //进行分页查询
-    orderService.page(pageInfo,queryWrapper);
+        //进行分页查询
+        orderService.page(pageInfo,queryWrapper);
 
-    //对象拷贝
-    BeanUtils.copyProperties(pageInfo,orderDtoPage,"records");
+        //对象拷贝
+        BeanUtils.copyProperties(pageInfo,orderDtoPage,"records");
 
-    List<Orders> records=pageInfo.getRecords();
+        List<Orders> records=pageInfo.getRecords();
 
-    List<OrderDto> list = records.stream().map((item) -> {
-        OrderDto ordersDto = new OrderDto();
+        List<OrderDto> list = records.stream().map((item) -> {
+            OrderDto ordersDto = new OrderDto();
 
-        BeanUtils.copyProperties(item, ordersDto);
-        Long Id = item.getId();
-        //根据id查分类对象
-        Orders orders = orderService.getById(Id);
-        String number = orders.getNumber();
-        LambdaQueryWrapper<OrderDetail> lambdaQueryWrapper=new LambdaQueryWrapper<>();
-        lambdaQueryWrapper.eq(OrderDetail::getOrderId,number);
-        List<OrderDetail> orderDetailList = orderDetailService.list(lambdaQueryWrapper);
-        int num=0;
+            BeanUtils.copyProperties(item, ordersDto);
+            Long Id = item.getId();
+            //根据id查分类对象
+            Orders orders = orderService.getById(Id);
+            String number = orders.getNumber();
+            LambdaQueryWrapper<OrderDetail> lambdaQueryWrapper=new LambdaQueryWrapper<>();
+            lambdaQueryWrapper.eq(OrderDetail::getOrderId,number);
+            List<OrderDetail> orderDetailList = orderDetailService.list(lambdaQueryWrapper);
+            int num=0;
 
-        for(OrderDetail l:orderDetailList){
-            num+=l.getNumber().intValue();
-        }
+            for(OrderDetail l:orderDetailList){
+                num+=l.getNumber().intValue();
+            }
 
-        ordersDto.setSumNum(num);
-        return ordersDto;
-    }).collect(Collectors.toList());
+            ordersDto.setSumNum(num);
+            return ordersDto;
+        }).collect(Collectors.toList());
 
-    orderDtoPage.setRecords(list);
+        orderDtoPage.setRecords(list);
 
-    return R.success(orderDtoPage);
-}
+        return R.success(orderDtoPage);
+    }
 
 
     //再来一单
