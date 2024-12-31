@@ -56,9 +56,12 @@ public class SetmealController {
      *请求参数中有setmeal参数，也有setmealdish的参数，所以只有setmeal对象或setmealdish对象接收参数是不行的
      * 需要一个新的数据传输类型SetmealDto，继承了setmeal所有属性，并扩展一些属性能接收setmealdish
      * RequestBody注解将请求参数封装为一个SetmealDto对象
+     *
+     * 每次保存新的数据，需要清理缓存，防止从缓存获取旧的数据，用户看到的还是我们修改之前的数据
+     * 使用CacheEvict注解清理缓存，设置allEntries为true，清空缓存名称为setmealCache的所有缓存
      */
     @PostMapping
-    //设置allEntries为true，清空缓存名称为setmealCache的所有缓存
+
     @CacheEvict(value = "setmealCache", allEntries = true)
     public R<String> save(@RequestBody SetmealDto setmealDto) {
 
@@ -222,10 +225,10 @@ public class SetmealController {
      请求参数有套餐分类的categoryID和status。是键值对的方式，不是json格式，可以直接封装到setmeal对象中。
      setmeal中都有这些属性。
      返回值是一个套餐分类的多个套餐，所以是list集合，里面的元素就是套餐
+     使用了redis的缓存技术：
+     list是查询的操作，所以添加Cacheable注解，根据categoryId和status生成动态key,将返回值存入缓存。
      */
-
     @GetMapping("/list")
-    //根据categoryId和status生成动态key,将返回值存入缓存
     @Cacheable(value = "setmealCache", key = "#setmeal.categoryId + '_' + #setmeal.status")
     public R<List<Setmeal>> list(Setmeal setmeal){
 

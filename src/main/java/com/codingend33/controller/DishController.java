@@ -41,7 +41,7 @@ public class DishController {
     @Autowired
     private CategoryService categoryService;
 
-    //注入RedisTemplate bean对象，处理  的逻辑
+    //注入RedisTemplate bean对象，处理缓存的的逻辑
     @Autowired
     private RedisTemplate redisTemplate;
 
@@ -64,7 +64,8 @@ public class DishController {
         //调用dish的服务层中的方法，
         dishService.saveWithFlavor(dishDto);
 
-        //清理对应分类的缓存
+        //保存新的数据后，清理对应分类的缓存，从数据库中读取新的数据，防止从缓存中获取修改之前的数据，
+        //动态构造Key，这个key与保存缓存时设置的key(list方法中)要保持一致。
         String key = "dish_" + dishDto.getCategoryId() + "_1";
         redisTemplate.delete(key);
 
@@ -188,7 +189,8 @@ public class DishController {
         //dishDto类型的数据无法使用内置方法，所以使用自定义方法。
         dishService.updateWithFlavor(dishDto);
 
-        //清理对应分类的缓存
+        //更新数据后，清理对应分类的缓存，从数据库中读取新的数据，防止从缓存中获取修改之前的数据，
+        //动态构造Key，这个key与保存缓存时设置的key(list方法中)要保持一致。
         String key = "dish_" + dishDto.getCategoryId() + "_1";
         redisTemplate.delete(key);
 
@@ -228,8 +230,11 @@ public class DishController {
         lambdaQueryWrapper.in(Dish::getId, ids);
         //根据ID获取菜品
         List<Dish> dishes = dishService.list(lambdaQueryWrapper);
+
+        //批量更新状态后，清理对应分类的缓存，从数据库中读取新的数据，防止从缓存中获取修改之前的数据，
         //通过菜品获取分类ID，并动态生成key。
         for (Dish dish : dishes) {
+            //动态构造Key，这个key与保存缓存时设置的key(list方法中)要保持一致。
             String key = "dish_" + dish.getCategoryId() + "_1";
             redisTemplate.delete(key);
         }
@@ -312,6 +317,8 @@ public class DishController {
      *选择规格按钮，是根据服务端返回数据中是否有flavors字段来决定的，但我们返回的是一个List<Dish>，其中并没有flavors属性，
      *将方法返回值改为DishDto，DishDto继承了Dish，且扩展了flavors属性和分类名称的属性
      *
+     * 根据菜品的分类，缓存多分数据，页面在查询时，点击某个分类，则查询对应分类下的菜品的缓存数据。
+     * 所以在list这个方法中设置缓存、
      */
 
     @GetMapping("/list")
@@ -319,15 +326,19 @@ public class DishController {
 
         //提前声明变量，DishDto类型的餐品集合
         List<DishDto> dishDtoList;
-        //动态构造Key
+
+
+        //动态构造redis数据的key
+        //一个分类下有多个菜品，每个key代表一个分类，也就是一份缓存数据。
+        //请求链接是CategoryId和Status参数构成，所以我们动态拼接一下就生成一个key。
+        //拼接完类似：dish_1234564564561321231_1,这个肯定是唯一的
         String key = "dish_" + dish.getCategoryId() + "_" + dish.getStatus();
 
-        //先从redis中获取缓存数据.
-        //一个分类下有多个菜品，每个key代表一个分类，也就是一份缓存数据。
-        //而且查询的请求是CategoryId和Status参数构成，所以我们动态拼接一下就生成了这key。
+        //先从redis中获取缓存数据.（最下面有将数据存入缓存的操作，也是按照这个key去存的）
+        //返回的数据类型和这个方法的返回类型是一致的List<DishDto>，需要强转。
         dishDtoList = (List<DishDto>) redisTemplate.opsForValue().get(key);
 
-        //如果存在，则直接返回，无需查询数据库
+        //如果缓存中存在，则直接返回，无需查询数据库
          if (dishDtoList != null){
              return R.success(dishDtoList);
          }
@@ -389,7 +400,7 @@ public class DishController {
             //将所有返回结果收集起来，封装成List
             }).collect(Collectors.toList());
 
-        //最后将查询到的菜品数据添加到缓存中
+        //缓存中没有数据，所以这次是从数据库获取数据，那么就添加到缓存中一份，便于下次获取时可以直接从缓存中获取。
         redisTemplate.opsForValue().set(key,dishDtoList,60, TimeUnit.MINUTES);
 
         //此时的餐品对象，有分类名称，也有相应的口味信息。

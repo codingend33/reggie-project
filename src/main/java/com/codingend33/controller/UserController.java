@@ -30,6 +30,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    //注入RedisTemplate对象，用于操作Redis;
     @Autowired
     private RedisTemplate redisTemplate;
 
@@ -51,6 +52,7 @@ public class UserController {
             MailUtils.sendTestMail(phone, code);
             //验证码存session，方便后面拿出来比对
             //session.setAttribute(phone, code);
+
             //验证码缓存到Redis，设置存活时间5分钟,单位是5分钟
             redisTemplate.opsForValue().set(phone, code,5, TimeUnit.MINUTES);
             return R.success("验证码发送成功");
@@ -81,7 +83,6 @@ public class UserController {
 
         //把Redis中缓存的code拿出来
         Object codeInRedis = redisTemplate.opsForValue().get(phone);
-
 
         //比较这用户输入的验证码和session中存的验证码是否一致
         if (code != null && code.equals(codeInRedis)) {
