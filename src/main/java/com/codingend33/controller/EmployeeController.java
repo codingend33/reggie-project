@@ -13,7 +13,7 @@ import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 
 @Slf4j //输出日志
@@ -104,7 +104,7 @@ public class EmployeeController {
     }
 
     // 新增员工
-    // 返回值类型就是string类型的R对象，因为响应给浏览器时只需要状态码，前端只根据状态码进行逻辑处理
+    // 返回值类型就是string类型的R对象，因为响应给浏览器时只需要状态码，前端只根据状态码进行逻辑处理，所以就返回了一个字符串
     // 前端提交的是新员工的json数据，所以需要requestbody解析和封装为一个对象。
     // postmapping不需要写路径了，因为请求路径没有二级路径
     @PostMapping //保存没有二级路径，所以根据拦截的请求和请求类型，就会调用这个方法

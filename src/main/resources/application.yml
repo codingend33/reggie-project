@@ -5,47 +5,57 @@ spring:
   application:
     #应用名称(可选)，默认就是项目名称
     name: reggie-project
-  shardingsphere:
-    datasource:
-      names:
-        master,slave
-      #主数据源
-      master:
-        type: com.alibaba.druid.pool.DruidDataSource
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://192.168.10.100:3306/reggie?serverTimezone=UTC&useSSL=false
-        username: root
-        password: 123456
-      #从数据源
-      slave:
-        type: com.alibaba.druid.pool.DruidDataSource
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://192.168.10.101:3306/reggie?serverTimezone=UTC&useSSL=false
-        username: root
-        password: 123456
+  datasource:
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/reggie?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: root
+      password: 123456
+#
+#  # 配置读写分离规则
+#  shardingsphere:
+#    datasource:
+#      names:
+#        master,slave
+#      #主数据源
+#      master:
+#        type: com.alibaba.druid.pool.DruidDataSource
+#        driver-class-name: com.mysql.cj.jdbc.Driver
+#        url: jdbc:mysql://192.168.10.100:3306/reggie?serverTimezone=UTC&useSSL=false  #数据库IP和数据库名字
+#        username: root
+#        password: 123456
+#      #从数据源
+#      slave:
+#        type: com.alibaba.druid.pool.DruidDataSource
+#        driver-class-name: com.mysql.cj.jdbc.Driver
+#        url: jdbc:mysql://192.168.10.101:3306/reggie?serverTimezone=UTC&useSSL=false  #数据库IP和数据库名字
+#        username: root
+#        password: 123456
+#
+#    masterslave:
+#      # 读写分离配置，从库的负载均衡。因为从库可能有多个，所以对于查询操作需要分配到某个从库执行
+#      # round_robin表示轮巡的策略，按照顺序让从库执行查询操作
+#      load-balance-algorithm-type: round_robin
+#      # 最终的数据源名称
+#      name: dataSource
+#      # 主库数据源名称
+#      master-data-source-name: master
+#      # 从库数据源名称列表，存在多个从库时用多个逗号分隔
+#      slave-data-source-names: slave
+#    props:
+#      sql:
+#        show: true #开启SQL显示，默认false，在控制台输出SQL
 
-    masterslave:
-      # 读写分离配置
-      load-balance-algorithm-type: round_robin
-      # 最终的数据源名称
-      name: dataSource
-      # 主库数据源名称
-      master-data-source-name: master
-      # 从库数据源名称列表，存在多个从库时用多个逗号分隔
-      slave-data-source-names: slave
-    props:
-      sql:
-        show: true #开启SQL显示，默认false
-  #在配置文件中配置允许bean定义覆盖配置项
+  #在配置文件中配置允许bean定义覆盖配置项。允许覆盖，防止框架的数据源冲突
   main:
     allow-bean-definition-overriding: true
 
   #配置redis
   redis:
-    host: 192.168.10.100 #这里换成localhost或者你自己的linux上装的redis
-    password: 123321
+    host: 192.168.0.129 #这里换成localhost或者你自己的linux上装的redis
+    password: 123456
     port: 6379
-    database: 0 # 0号数据库
+    database: 1 # 0号数据库
   cache:
     redis:
       time-to-live: 3600000 #设置存活时间为一小时，如果不设置，则一直存活

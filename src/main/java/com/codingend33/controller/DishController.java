@@ -309,6 +309,7 @@ public class DishController {
 
 
     /**
+     * 添加套餐功能中，添加菜品的页面，实现展示餐品。
      *菜品展示功能，对之前的代码进行了修改。
      *请求连接是dish/list?categoryId=xxx，
      *根据categoryId查询对应的餐品，因为查询的是餐品且dish对象中有CategoryId属性，
